@@ -1,6 +1,7 @@
 {
   "name": "codebook-serverless-api",
   "version": "1.0.0",
+  "type": "module",
   "description": "Serverless API for CodeBook using AWS Lambda and DynamoDB",
   "main": "index.js",
   "scripts": {
