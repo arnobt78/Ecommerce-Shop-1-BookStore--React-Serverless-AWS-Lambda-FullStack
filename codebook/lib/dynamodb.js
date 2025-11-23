@@ -23,6 +23,8 @@ function createDynamoDBClient() {
     hasSecretKey: !!secretAccessKey,
     accessKeyLength: accessKeyId ? accessKeyId.length : 0,
     secretKeyLength: secretAccessKey ? secretAccessKey.length : 0,
+    accessKeyPrefix: accessKeyId ? accessKeyId.substring(0, 4) + '...' : 'N/A',
+    secretKeyPrefix: secretAccessKey ? secretAccessKey.substring(0, 4) + '...' : 'N/A',
   });
 
   if (!accessKeyId || !secretAccessKey) {
