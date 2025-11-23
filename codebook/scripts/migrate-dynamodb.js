@@ -35,7 +35,7 @@ try {
 }
 
 // Read the original db.json
-const dbPath = join(__dirname, "../codebook-backend-reference/data/db.json");
+const dbPath = join(__dirname, "../../codebook-backend-reference/data/db.json");
 const dbData = JSON.parse(readFileSync(dbPath, "utf-8"));
 
 async function migrateProducts() {

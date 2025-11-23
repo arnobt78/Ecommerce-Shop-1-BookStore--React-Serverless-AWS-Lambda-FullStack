@@ -7,9 +7,18 @@ function createDynamoDBClient() {
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 
+  // Log for debugging (remove sensitive data in production)
+  console.log('DynamoDB Client Init:', {
+    region,
+    hasAccessKey: !!accessKeyId,
+    hasSecretKey: !!secretAccessKey,
+  });
+
   if (!accessKeyId || !secretAccessKey) {
-    console.error('Missing AWS credentials. Check your .env file.');
-    throw new Error('AWS credentials are not configured');
+    const errorMsg = 'AWS credentials are not configured. Check Vercel environment variables.';
+    console.error(errorMsg);
+    console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('AWS')));
+    throw new Error(errorMsg);
   }
 
   const client = new DynamoDBClient({

@@ -80,7 +80,7 @@ All endpoints are prefixed with `/api`:
 
 Include the JWT token in the Authorization header:
 
-```
+```bash
 Authorization: Bearer <token>
 ```
 
