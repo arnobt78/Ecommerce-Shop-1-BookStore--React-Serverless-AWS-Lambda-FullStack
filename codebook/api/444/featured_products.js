@@ -1,4 +1,4 @@
-import { getFeaturedProducts } from '../lib/products.js';
+import { getFeaturedProducts } from '../../lib/products.js';
 
 export default async function handler(req, res) {
   // Handle CORS preflight

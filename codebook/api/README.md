@@ -44,6 +44,7 @@ node scripts/create-tables.js
 ```
 
 This will create:
+
 - `codebook-products`
 - `codebook-featured-products`
 - `codebook-orders`
@@ -100,10 +101,12 @@ The API will be available at `http://localhost:3000/api/*`
 ### Deploy to Vercel
 
 1. **Set Environment Variables in Vercel Dashboard**:
+
    - Go to your project settings
    - Add all environment variables from `.env.local`
 
 2. **Deploy**:
+
    ```bash
    vercel deploy
    ```
@@ -122,15 +125,8 @@ REACT_APP_GUEST_PASSWORD=12345678
 
 ## Project Structure
 
-```
+```bash
 api/
-├── lib/
-│   ├── dynamodb.js      # DynamoDB client setup
-│   ├── auth.js          # JWT authentication utilities
-│   ├── response.js      # Response helpers
-│   ├── products.js      # Product data access
-│   ├── users.js         # User data access
-│   └── orders.js        # Order data access
 ├── 444/
 │   ├── products.js      # Public product endpoints
 │   └── featured_products.js
@@ -141,9 +137,16 @@ api/
 │   └── orders.js        # Protected order endpoints
 ├── login.js             # Login endpoint
 └── register.js          # Registration endpoint
+lib/
+├── dynamodb.js          # DynamoDB client setup
+├── auth.js              # JWT authentication utilities
+├── response.js          # Response helpers
+├── products.js          # Product data access
+├── users.js             # User data access
+└── orders.js            # Order data access
 scripts/
-├── create-tables.js      # DynamoDB table creation
-└── migrate-dynamodb.js   # Data migration
+├── create-tables.js     # DynamoDB table creation
+└── migrate-dynamodb.js  # Data migration
 ```
 
 ## Notes
@@ -152,4 +155,3 @@ scripts/
 - DynamoDB uses on-demand billing (free tier eligible)
 - JWT tokens expire after 7 days
 - Passwords are hashed using bcrypt
-

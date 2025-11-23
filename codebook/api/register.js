@@ -1,5 +1,5 @@
-import { createUser } from './lib/users.js';
-import { generateToken } from './lib/auth.js';
+import { createUser } from '../lib/users.js';
+import { generateToken } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   // Handle CORS preflight

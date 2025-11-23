@@ -1,5 +1,5 @@
-import { getOrdersByUserId, createOrder } from '../lib/orders.js';
-import { requireAuth } from '../lib/auth.js';
+import { getOrdersByUserId, createOrder } from '../../lib/orders.js';
+import { requireAuth } from '../../lib/auth.js';
 
 export default async function handler(req, res) {
   // Handle CORS preflight

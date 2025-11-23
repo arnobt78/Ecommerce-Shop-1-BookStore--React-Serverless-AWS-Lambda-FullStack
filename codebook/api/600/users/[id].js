@@ -1,5 +1,5 @@
-import { getUserById } from '../../lib/users.js';
-import { requireAuth } from '../../lib/auth.js';
+import { getUserById } from '../../../lib/users.js';
+import { requireAuth } from '../../../lib/auth.js';
 
 export default async function handler(req, res) {
   // Handle CORS preflight

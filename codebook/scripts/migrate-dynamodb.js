@@ -8,9 +8,9 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { dynamoDB, TABLES } from "../api/lib/dynamodb.js";
+import { dynamoDB, TABLES } from "../lib/dynamodb.js";
 import { PutCommand, BatchWriteCommand } from "@aws-sdk/lib-dynamodb";
-import { hashPassword } from "../api/lib/auth.js";
+import { hashPassword } from "../lib/auth.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

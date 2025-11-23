@@ -1,4 +1,4 @@
-import { getProductById } from '../../lib/products.js';
+import { getProductById } from '../../../lib/products.js';
 
 export default async function handler(req, res) {
   // Handle CORS preflight
