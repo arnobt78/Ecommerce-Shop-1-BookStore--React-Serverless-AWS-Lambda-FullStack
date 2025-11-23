@@ -2,7 +2,7 @@
  * Script to create DynamoDB tables
  * Run this once to set up your DynamoDB tables
  * 
- * Usage: node api/scripts/create-tables.js
+ * Usage: node scripts/create-tables.js
  * 
  * Note: This requires AWS CLI or AWS SDK with proper credentials
  */
@@ -15,7 +15,7 @@ import { DynamoDBClient, CreateTableCommand } from '@aws-sdk/client-dynamodb';
 // Load environment variables from .env
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const envPath = join(__dirname, '../../.env');
+const envPath = join(__dirname, '../.env');
 
 try {
   const envFile = readFileSync(envPath, 'utf-8');

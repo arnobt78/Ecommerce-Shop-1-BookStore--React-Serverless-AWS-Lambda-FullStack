@@ -40,7 +40,7 @@ REACT_APP_HOST=http://localhost:3000
 Run the table creation script:
 
 ```bash
-node api/scripts/create-tables.js
+node scripts/create-tables.js
 ```
 
 This will create:
@@ -54,7 +54,7 @@ This will create:
 Seed DynamoDB with initial data from `db.json`:
 
 ```bash
-node api/scripts/migrate-dynamodb.js
+node scripts/migrate-dynamodb.js
 ```
 
 ## API Endpoints
@@ -140,10 +140,10 @@ api/
 ├── 660/
 │   └── orders.js        # Protected order endpoints
 ├── login.js             # Login endpoint
-├── register.js          # Registration endpoint
-└── scripts/
-    ├── create-tables.js # DynamoDB table creation
-    └── migrate-dynamodb.js # Data migration
+└── register.js          # Registration endpoint
+scripts/
+├── create-tables.js      # DynamoDB table creation
+└── migrate-dynamodb.js   # Data migration
 ```
 
 ## Notes
