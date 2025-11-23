@@ -14,13 +14,13 @@ Serverless backend API for CodeBook using AWS Lambda (via Vercel) and DynamoDB.
 ### 1. Install Dependencies
 
 ```bash
-cd codebook-frontend
+cd codebook
 npm install
 ```
 
 ### 2. Set Environment Variables
 
-Create a `.env.local` file in `codebook-frontend/`:
+Create a `.env` file in `codebook/`:
 
 ```env
 # AWS Credentials
@@ -115,7 +115,7 @@ The API will be available at `http://localhost:3000/api/*`
 
 ### Update Frontend Environment
 
-Update `codebook-frontend/.env`:
+Update `codebook/.env`:
 
 ```env
 REACT_APP_HOST=https://your-vercel-app.vercel.app
@@ -148,6 +148,37 @@ scripts/
 ├── create-tables.js     # DynamoDB table creation
 └── migrate-dynamodb.js  # Data migration
 ```
+
+## Free Tier & Costs
+
+### AWS DynamoDB Free Tier (Always Free)
+- **25 GB storage** - Free forever (not time-limited)
+- **25 provisioned write capacity units (WCU)** per month
+- **25 provisioned read capacity units (RCU)** per month
+- **2.5 million stream read requests** per month
+
+**For a demo project**: This is typically more than enough. Your current setup uses on-demand pricing, which is free tier eligible.
+
+**What happens after free tier?**
+- Storage: $0.25 per GB/month (beyond 25 GB)
+- Read/Write: Very low cost (~$1.25 per million requests)
+- For a small demo project, costs are typically $0-1/month
+
+### Vercel Free Tier (Hobby Plan)
+- **100 GB-hours** serverless function execution
+- **100 GB** bandwidth per month
+- **Unlimited** serverless function invocations
+- **Unlimited** deployments
+
+**For a demo project**: This is usually sufficient unless you have very high traffic.
+
+### Will This Work Long-Term?
+✅ **Yes, for a demo project!** As long as you:
+- Stay within DynamoDB free tier limits (25 GB storage)
+- Stay within Vercel Hobby plan limits
+- Don't have extremely high traffic
+
+**Monitoring**: Check your AWS Billing Dashboard and Vercel Dashboard regularly to monitor usage.
 
 ## Notes
 
