@@ -1,5 +1,5 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient } = require('@aws-sdk/lib-dynamodb');
 
 // Initialize DynamoDB client with proper error handling
 function createDynamoDBClient() {
@@ -43,7 +43,7 @@ function getDynamoDB() {
 }
 
 // Export as a proxy to support lazy initialization
-export const dynamoDB = new Proxy({}, {
+const dynamoDB = new Proxy({}, {
   get(target, prop) {
     const client = getDynamoDB();
     const value = client[prop];
@@ -52,10 +52,11 @@ export const dynamoDB = new Proxy({}, {
 });
 
 // Table names
-export const TABLES = {
+const TABLES = {
   PRODUCTS: 'codebook-products',
   FEATURED_PRODUCTS: 'codebook-featured-products',
   ORDERS: 'codebook-orders',
   USERS: 'codebook-users',
 };
 
+module.exports = { dynamoDB, TABLES };

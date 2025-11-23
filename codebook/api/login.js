@@ -1,7 +1,7 @@
-import { verifyUser } from '../lib/users.js';
-import { generateToken } from '../lib/auth.js';
+const { verifyUser } = require('../lib/users');
+const { generateToken } = require('../lib/auth');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -37,5 +37,4 @@ export default async function handler(req, res) {
     console.error('Login error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
-}
-
+};

@@ -1,10 +1,10 @@
-import { dynamoDB, TABLES } from './dynamodb.js';
-import { ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+const { dynamoDB, TABLES } = require('./dynamodb');
+const { ScanCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
 /**
  * Get orders by user ID
  */
-export async function getOrdersByUserId(userId) {
+async function getOrdersByUserId(userId) {
   const command = new ScanCommand({
     TableName: TABLES.ORDERS,
     FilterExpression: '#userId = :userId',
@@ -23,7 +23,7 @@ export async function getOrdersByUserId(userId) {
 /**
  * Create new order
  */
-export async function createOrder(orderData) {
+async function createOrder(orderData) {
   try {
     const { cartList, amount_paid, quantity, user } = orderData;
 
@@ -71,3 +71,7 @@ export async function createOrder(orderData) {
   }
 }
 
+module.exports = {
+  getOrdersByUserId,
+  createOrder,
+};

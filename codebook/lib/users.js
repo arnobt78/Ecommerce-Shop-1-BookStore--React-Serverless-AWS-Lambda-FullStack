@@ -1,11 +1,11 @@
-import { dynamoDB, TABLES } from './dynamodb.js';
-import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { hashPassword, comparePassword } from './auth.js';
+const { dynamoDB, TABLES } = require('./dynamodb');
+const { GetCommand, PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { hashPassword, comparePassword } = require('./auth');
 
 /**
  * Get user by ID
  */
-export async function getUserById(id) {
+async function getUserById(id) {
   const command = new GetCommand({
     TableName: TABLES.USERS,
     Key: { id: Number(id) },
@@ -22,10 +22,9 @@ export async function getUserById(id) {
 /**
  * Get user by email
  */
-export async function getUserByEmail(email) {
+async function getUserByEmail(email) {
   // Note: In production, you'd want a GSI (Global Secondary Index) on email
   // For now, we'll scan (not ideal for large datasets)
-  const { ScanCommand } = await import('@aws-sdk/lib-dynamodb');
   const command = new ScanCommand({
     TableName: TABLES.USERS,
     FilterExpression: 'email = :email',
@@ -41,7 +40,7 @@ export async function getUserByEmail(email) {
 /**
  * Create new user
  */
-export async function createUser(userData) {
+async function createUser(userData) {
   const { email, password, name } = userData;
 
   // Check if user exists
@@ -51,7 +50,6 @@ export async function createUser(userData) {
   }
 
   // Get next ID (in production, use a counter table or UUID)
-  const { ScanCommand } = await import('@aws-sdk/lib-dynamodb');
   const scanCommand = new ScanCommand({
     TableName: TABLES.USERS,
     Select: 'COUNT',
@@ -85,7 +83,7 @@ export async function createUser(userData) {
 /**
  * Verify user credentials
  */
-export async function verifyUser(email, password) {
+async function verifyUser(email, password) {
   const user = await getUserByEmail(email);
   if (!user) {
     return null;
@@ -101,3 +99,9 @@ export async function verifyUser(email, password) {
   return userWithoutPassword;
 }
 
+module.exports = {
+  getUserById,
+  getUserByEmail,
+  createUser,
+  verifyUser,
+};

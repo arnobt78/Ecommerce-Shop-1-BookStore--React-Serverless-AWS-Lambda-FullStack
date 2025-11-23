@@ -1,10 +1,10 @@
-import { dynamoDB, TABLES } from './dynamodb.js';
-import { ScanCommand, GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+const { dynamoDB, TABLES } = require('./dynamodb');
+const { ScanCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
 
 /**
  * Get all products (with optional search)
  */
-export async function getAllProducts(searchTerm = '') {
+async function getAllProducts(searchTerm = '') {
   try {
     const command = new ScanCommand({
       TableName: TABLES.PRODUCTS,
@@ -36,7 +36,7 @@ export async function getAllProducts(searchTerm = '') {
 /**
  * Get product by ID
  */
-export async function getProductById(id) {
+async function getProductById(id) {
   const command = new GetCommand({
     TableName: TABLES.PRODUCTS,
     Key: { id: Number(id) },
@@ -49,7 +49,7 @@ export async function getProductById(id) {
 /**
  * Get featured products
  */
-export async function getFeaturedProducts() {
+async function getFeaturedProducts() {
   const command = new ScanCommand({
     TableName: TABLES.FEATURED_PRODUCTS,
   });
@@ -58,3 +58,8 @@ export async function getFeaturedProducts() {
   return result.Items || [];
 }
 
+module.exports = {
+  getAllProducts,
+  getProductById,
+  getFeaturedProducts,
+};

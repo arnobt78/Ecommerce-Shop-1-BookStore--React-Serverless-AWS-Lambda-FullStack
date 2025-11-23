@@ -1,7 +1,7 @@
-import { getUserById } from '../../../lib/users.js';
-import { requireAuth } from '../../../lib/auth.js';
+const { getUserById } = require('../../../lib/users');
+const { requireAuth } = require('../../../lib/auth');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -40,5 +40,4 @@ export default async function handler(req, res) {
     }
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
-}
-
+};

@@ -1,12 +1,12 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 /**
  * Generate JWT token for user
  */
-export function generateToken(user) {
+function generateToken(user) {
   return jwt.sign(
     { 
       id: user.id, 
@@ -21,7 +21,7 @@ export function generateToken(user) {
 /**
  * Verify JWT token
  */
-export function verifyToken(token) {
+function verifyToken(token) {
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch (error) {
@@ -32,21 +32,21 @@ export function verifyToken(token) {
 /**
  * Hash password
  */
-export async function hashPassword(password) {
+async function hashPassword(password) {
   return bcrypt.hash(password, 10);
 }
 
 /**
  * Compare password with hash
  */
-export async function comparePassword(password, hash) {
+async function comparePassword(password, hash) {
   return bcrypt.compare(password, hash);
 }
 
 /**
  * Extract token from Authorization header
  */
-export function extractToken(req) {
+function extractToken(req) {
   const authHeader = req.headers.authorization || req.headers.Authorization || req.headers['authorization'];
   if (!authHeader) return null;
   
@@ -59,7 +59,7 @@ export function extractToken(req) {
 /**
  * Middleware to verify authentication
  */
-export function requireAuth(req) {
+function requireAuth(req) {
   const token = extractToken(req);
   if (!token) {
     throw new Error('No token provided');
@@ -73,3 +73,11 @@ export function requireAuth(req) {
   return decoded;
 }
 
+module.exports = {
+  generateToken,
+  verifyToken,
+  hashPassword,
+  comparePassword,
+  extractToken,
+  requireAuth,
+};

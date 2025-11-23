@@ -1,7 +1,7 @@
-import { getOrdersByUserId, createOrder } from '../../lib/orders.js';
-import { requireAuth } from '../../lib/auth.js';
+const { getOrdersByUserId, createOrder } = require('../../lib/orders');
+const { requireAuth } = require('../../lib/auth');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -60,5 +60,4 @@ export default async function handler(req, res) {
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-}
-
+};

@@ -1,6 +1,6 @@
-import { getAllProducts } from '../../lib/products.js';
+const { getAllProducts } = require('../../lib/products');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -31,5 +31,4 @@ export default async function handler(req, res) {
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-}
-
+};

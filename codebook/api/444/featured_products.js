@@ -1,6 +1,6 @@
-import { getFeaturedProducts } from '../../lib/products.js';
+const { getFeaturedProducts } = require('../../lib/products');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,5 +21,4 @@ export default async function handler(req, res) {
     console.error('Featured products error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
-}
-
+};
