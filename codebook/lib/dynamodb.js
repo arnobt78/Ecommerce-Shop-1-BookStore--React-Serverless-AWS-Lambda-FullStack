@@ -3,15 +3,26 @@ const { DynamoDBDocumentClient } = require('@aws-sdk/lib-dynamodb');
 
 // Initialize DynamoDB client with proper error handling
 function createDynamoDBClient() {
-  const region = process.env.AWS_REGION || 'eu-north-1';
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+  const region = (process.env.AWS_REGION || 'eu-north-1').trim();
+  
+  // Trim and remove quotes from credentials (Vercel sometimes adds quotes)
+  let accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  let secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+  
+  if (accessKeyId) {
+    accessKeyId = accessKeyId.trim().replace(/^["']|["']$/g, '');
+  }
+  if (secretAccessKey) {
+    secretAccessKey = secretAccessKey.trim().replace(/^["']|["']$/g, '');
+  }
 
-  // Log for debugging (remove sensitive data in production)
+  // Log for debugging (without exposing actual keys)
   console.log('DynamoDB Client Init:', {
     region,
     hasAccessKey: !!accessKeyId,
     hasSecretKey: !!secretAccessKey,
+    accessKeyLength: accessKeyId ? accessKeyId.length : 0,
+    secretKeyLength: secretAccessKey ? secretAccessKey.length : 0,
   });
 
   if (!accessKeyId || !secretAccessKey) {
@@ -19,6 +30,14 @@ function createDynamoDBClient() {
     console.error(errorMsg);
     console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('AWS')));
     throw new Error(errorMsg);
+  }
+
+  // Validate key lengths (AWS access keys are typically 20 chars, secret keys are 40 chars)
+  if (accessKeyId.length !== 20) {
+    console.warn(`Warning: AWS_ACCESS_KEY_ID length is ${accessKeyId.length}, expected 20. Check for extra characters.`);
+  }
+  if (secretAccessKey.length !== 40) {
+    console.warn(`Warning: AWS_SECRET_ACCESS_KEY length is ${secretAccessKey.length}, expected 40. Check for extra characters.`);
   }
 
   const client = new DynamoDBClient({
