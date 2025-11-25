@@ -6,34 +6,39 @@ import { ProductCard, ProductCardSkeleton } from "../../components";
 import { FilterBar } from "./components/FilterBar";
 
 import { useFilter } from "../../context";
-import { getProductList } from "../../services";
+import { useProducts } from "../../hooks/useProducts";
 import { toast } from "react-toastify";
 
 export const ProductsList = () => {
   const { products, initialProductList } = useFilter();
   const [show, setShow] = useState(false);
-  const [loading, setLoading] = useState(true);
   const search = useLocation().search;
-  const searchTerm = new URLSearchParams(search).get("q");
+  const searchTerm = new URLSearchParams(search).get("q") || "";
   useTitle("Explore eBooks Collection");
 
+  // Use React Query hook - automatically handles caching, deduplication, and loading states
+  // Automatically refetches when searchTerm changes (from URL params)
+  const {
+    data: productData = [],
+    isLoading: loading,
+    error,
+  } = useProducts(searchTerm);
+
+  // Update FilterContext when product data changes
+  // Prioritize showing cached data immediately
   useEffect(() => {
-    async function fetchProducts() {
-      setLoading(true);
-      try {
-        const data = await getProductList(searchTerm);
-        initialProductList(data);
-      } catch (error) {
-        toast.error(error.message, {
-          closeButton: true,
-          position: "bottom-center",
-        });
-      } finally {
-        setLoading(false);
-      }
+    if (productData.length > 0 || !loading) {
+      initialProductList(productData);
     }
-    fetchProducts();
-  }, [searchTerm, initialProductList]); //eslint-disable-line
+  }, [productData, initialProductList, loading]);
+
+  // Show error toast if API call fails
+  if (error) {
+    toast.error(error.message, {
+      closeButton: true,
+      position: "bottom-center",
+    });
+  }
 
   return (
     <main>
@@ -63,16 +68,18 @@ export const ProductsList = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center max-w-6xl mx-auto">
-          {loading ? (
-            Array(6).fill(0).map((_, index) => (
-              <ProductCardSkeleton key={`skeleton-${index}`} />
-            ))
-          ) : (
-            products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center max-w-7xl mx-auto">
+          {/* Only show skeleton if we have no data AND we're loading */}
+          {/* If cached data exists, show it immediately (even if refetching in background) */}
+          {loading && products.length === 0
+            ? Array(6)
+                .fill(0)
+                .map((_, index) => (
+                  <ProductCardSkeleton key={`skeleton-${index}`} />
+                ))
+            : products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
         </div>
       </section>
 

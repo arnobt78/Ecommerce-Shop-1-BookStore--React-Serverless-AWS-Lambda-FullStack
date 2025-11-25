@@ -1,33 +1,33 @@
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { toast } from "react-toastify";
 import { useTitle } from "../../hooks/useTitle";
-import { getUserOrders } from "../../services";
+import { useUserOrders } from "../../hooks/useUser";
 import { DashboardCard } from "./components/DashboardCard";
 import { DashboardCardSkeleton } from "./components/DashboardCardSkeleton";
 import { DashboardEmpty } from "./components/DashboardEmpty";
 
 export const DashboardPage = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
   useTitle("Dashboard");
 
-  useEffect(() => {
-    async function fetchOrders() {
-      setLoading(true);
-      try {
-        const data = await getUserOrders();
-        setOrders(data);
-      } catch (error) {
-        toast.error(error.message, {
-          closeButton: true,
-          position: "bottom-center",
-        });
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchOrders();
-  }, []);
+  // Use React Query hook - automatically handles caching, deduplication, and loading states
+  const { data: orders = [], isLoading: loading, error } = useUserOrders();
+
+  // Sort orders by date (most recent first) - using useMemo to avoid re-sorting on every render
+  const sortedOrders = useMemo(() => {
+    return [...orders].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+      const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+      return dateB - dateA; // Most recent first
+    });
+  }, [orders]);
+
+  // Show error toast if API call fails
+  if (error) {
+    toast.error(error.message, {
+      closeButton: true,
+      position: "bottom-center",
+    });
+  }
 
   return (
     <main>
@@ -43,9 +43,9 @@ export const DashboardPage = () => {
           Array(2).fill(0).map((_, index) => (
             <DashboardCardSkeleton key={`skeleton-${index}`} />
           ))
-        ) : orders.length > 0 ? (
-          // Show actual orders when loaded and orders exist
-          orders.map((order) => <DashboardCard key={order.id} order={order} />)
+        ) : sortedOrders.length > 0 ? (
+          // Show actual orders when loaded and orders exist (sorted by date)
+          sortedOrders.map((order) => <DashboardCard key={order.id} order={order} />)
         ) : (
           // Show empty state only when not loading and no orders
           <DashboardEmpty />

@@ -1,5 +1,6 @@
 const { dynamoDB, TABLES } = require('./dynamodb');
 const { ScanCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { v4: uuidv4 } = require('uuid');
 
 /**
  * Get orders by user ID
@@ -12,7 +13,7 @@ async function getOrdersByUserId(userId) {
       '#userId': 'userId',
     },
     ExpressionAttributeValues: {
-      ':userId': Number(userId),
+      ':userId': userId, // UUID is a string, no conversion needed
     },
   });
 
@@ -35,24 +36,19 @@ async function createOrder(orderData) {
       throw new Error('User information is required');
     }
 
-    // Get next ID
-    const scanCommand = new ScanCommand({
-      TableName: TABLES.ORDERS,
-      Select: 'COUNT',
-    });
-    const countResult = await dynamoDB.send(scanCommand);
-    const nextId = (countResult.Count || 0) + 1;
+    // Generate UUID for order ID
+    const orderId = uuidv4();
 
     const order = {
-      id: nextId,
-      userId: Number(user.id), // Ensure userId is a number
+      id: orderId, // Use UUID instead of numeric ID
+      userId: user.id, // UUID is a string, no conversion needed
       cartList,
       amount_paid: Number(amount_paid), // Ensure amount is a number
       quantity: Number(quantity), // Ensure quantity is a number
       user: {
         name: user.name,
         email: user.email,
-        id: Number(user.id), // Ensure id is a number
+        id: user.id, // UUID is a string, no conversion needed
       },
       createdAt: new Date().toISOString(),
     };

@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "CodeBook",
+  "name": "CodeBook eCommerce AWS Serverless Platform",
   "icons": [
     {
       "src": "favicon.ico",

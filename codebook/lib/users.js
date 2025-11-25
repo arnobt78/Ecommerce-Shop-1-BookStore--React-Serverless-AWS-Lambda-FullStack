@@ -1,6 +1,7 @@
 const { dynamoDB, TABLES } = require('./dynamodb');
 const { GetCommand, PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { hashPassword, comparePassword } = require('./auth');
+const { v4: uuidv4 } = require('uuid');
 
 /**
  * Get user by ID
@@ -8,7 +9,7 @@ const { hashPassword, comparePassword } = require('./auth');
 async function getUserById(id) {
   const command = new GetCommand({
     TableName: TABLES.USERS,
-    Key: { id: Number(id) },
+    Key: { id: id }, // UUID is a string, no conversion needed
   });
 
   const result = await dynamoDB.send(command);
@@ -16,6 +17,12 @@ async function getUserById(id) {
 
   // Don't return password
   const { password, ...user } = result.Item;
+  
+  // Ensure role exists (default to 'user' for backward compatibility with existing users)
+  if (!user.role) {
+    user.role = 'user';
+  }
+  
   return user;
 }
 
@@ -34,7 +41,14 @@ async function getUserByEmail(email) {
   });
 
   const result = await dynamoDB.send(command);
-  return result.Items?.[0] || null;
+  const user = result.Items?.[0] || null;
+  
+  // Ensure role exists (default to 'user' for backward compatibility with existing users)
+  if (user && !user.role) {
+    user.role = 'user';
+  }
+  
+  return user;
 }
 
 /**
@@ -49,22 +63,18 @@ async function createUser(userData) {
     throw new Error('User already exists');
   }
 
-  // Get next ID (in production, use a counter table or UUID)
-  const scanCommand = new ScanCommand({
-    TableName: TABLES.USERS,
-    Select: 'COUNT',
-  });
-  const countResult = await dynamoDB.send(scanCommand);
-  const nextId = (countResult.Count || 0) + 1;
+  // Generate UUID for user ID
+  const userId = uuidv4();
 
   // Hash password
   const hashedPassword = await hashPassword(password);
 
   const user = {
-    id: nextId,
+    id: userId, // Use UUID instead of numeric ID
     email,
     name,
     password: hashedPassword,
+    role: 'user', // Default role for all new registrations
     createdAt: new Date().toISOString(),
   };
 
@@ -96,6 +106,12 @@ async function verifyUser(email, password) {
 
   // Return user without password
   const { password: _, ...userWithoutPassword } = user;
+  
+  // Ensure role exists (default to 'user' for backward compatibility with existing users)
+  if (!userWithoutPassword.role) {
+    userWithoutPassword.role = 'user';
+  }
+  
   return userWithoutPassword;
 }
 

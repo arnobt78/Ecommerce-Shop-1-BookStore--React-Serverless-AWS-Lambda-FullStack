@@ -1,30 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useCart } from "../../../context";
-import { createOrder, getUser } from "../../../services";
+import { createOrder } from "../../../services";
+import { useUser } from "../../../hooks/useUser";
 
 export const Checkout = ({ setCheckout }) => {
   const { cartList, total, clearCart } = useCart();
-  const [user, setUser] = useState({});
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const data = await getUser();
-        setUser(data);
-      } catch (error) {
-        toast.error(error.message, {
-          closeButton: true,
-          position: "bottom-center",
-        });
-      }
-    }
-    fetchData();
-  }, []);
+  // Use React Query hook - automatically handles caching, deduplication, and loading states
+  const { data: user = {}, error } = useUser();
+
+  // Show error toast if API call fails
+  if (error) {
+    toast.error(error.message, {
+      closeButton: true,
+      position: "bottom-center",
+    });
+  }
 
   async function handleOrderSubmit(event) {
     event.preventDefault();
@@ -144,7 +139,7 @@ export const Checkout = ({ setCheckout }) => {
                     type="number"
                     name="month"
                     id="month"
-                    className="inline-block w-20 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:value-gray-400 dark:text-white"
+                    className="w-20 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:value-gray-400 dark:text-white"
                     value="03"
                     disabled
                     required=""
@@ -153,7 +148,7 @@ export const Checkout = ({ setCheckout }) => {
                     type="number"
                     name="year"
                     id="year"
-                    className="inline-block w-20 ml-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:value-gray-400 dark:text-white"
+                    className="w-20 ml-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:value-gray-400 dark:text-white"
                     value="27"
                     disabled
                     required=""
@@ -186,7 +181,8 @@ export const Checkout = ({ setCheckout }) => {
                 >
                   {loading ? (
                     <>
-                      <span className="inline-block animate-spin mr-2">⏳</span>Processing...
+                      <span className="inline-block animate-spin mr-2">⏳</span>
+                      Processing...
                     </>
                   ) : (
                     <>

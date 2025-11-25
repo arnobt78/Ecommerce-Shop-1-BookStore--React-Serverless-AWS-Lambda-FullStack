@@ -1,4 +1,9 @@
-const API_HOST = process.env.REACT_APP_HOST || 'http://localhost:3001';
+// Use relative URLs - works with any port automatically
+// REACT_APP_HOST is only needed if API is on a different domain (e.g., production)
+// Remove trailing slash if present to avoid double slashes in URLs
+const API_HOST = process.env.REACT_APP_HOST 
+  ? process.env.REACT_APP_HOST.replace(/\/$/, '') 
+  : '';
 
 function getSession(){
     const token = JSON.parse(sessionStorage.getItem("token"));

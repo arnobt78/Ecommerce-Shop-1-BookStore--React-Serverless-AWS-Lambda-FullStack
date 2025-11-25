@@ -1,12 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { getUser, logout } from "../../services";
+import { logout } from "../../services";
+import { useUser } from "../../hooks/useUser";
 
 export const DropdownLoggedIn = ({setDropdown}) => {
     const navigate = useNavigate();
     
-    // Load cached user email instantly from sessionStorage
+    // Load cached user email instantly from sessionStorage for immediate display
     const cachedUser = useMemo(() => {
         try {
             const cached = sessionStorage.getItem("userEmail");
@@ -16,7 +17,25 @@ export const DropdownLoggedIn = ({setDropdown}) => {
         }
     }, []);
     
-    const [user, setUser] = useState(cachedUser);
+    // Use React Query hook - automatically handles caching, deduplication, and loading states
+    const { data: userData, error } = useUser();
+    
+    // Use cached email for instant display, fallback to fetched data
+    const user = userData?.email ? userData : cachedUser;
+
+    // Cache email when user data is fetched
+    useEffect(() => {
+        if (userData?.email) {
+            sessionStorage.setItem("userEmail", userData.email);
+        }
+    }, [userData]);
+
+    // Handle logout if user data fetch fails and no cached email
+    useEffect(() => {
+        if (error && !cachedUser.email) {
+            toast.error(error.message, { closeButton: true, position: "bottom-center" });
+        }
+    }, [error, cachedUser.email]);
 
     function handleLogout(){
         logout();
@@ -25,33 +44,6 @@ export const DropdownLoggedIn = ({setDropdown}) => {
         setDropdown(false);
         navigate("/");
     }
-
-    useEffect(() => {
-        // Set cached email immediately for instant display
-        if (cachedUser.email) {
-            setUser(cachedUser);
-        }
-        
-        // Fetch fresh data in background to update if needed
-        async function fetchData(){
-            try{
-                const data = await getUser();
-                if (data.email) {
-                    setUser(data);
-                    // Cache the email for instant display next time
-                    sessionStorage.setItem("userEmail", data.email);
-                } else {
-                    handleLogout();
-                }
-            } catch(error){
-                // If fetch fails but we have cached email, keep showing it
-                if (!cachedUser.email) {
-                    toast.error(error.message, { closeButton: true, position: "bottom-center" });
-                }
-            }            
-        }
-        fetchData();
-    }, [cachedUser.email]); //eslint-disable-line
 
   return (
     <div id="dropdownAvatar" className="select-none	absolute top-10 right-0 z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600">

@@ -6,23 +6,23 @@ const { ScanCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
  */
 async function getAllProducts(searchTerm = '') {
   try {
-    const command = new ScanCommand({
-      TableName: TABLES.PRODUCTS,
-    });
+  const command = new ScanCommand({
+    TableName: TABLES.PRODUCTS,
+  });
 
-    const result = await dynamoDB.send(command);
-    let products = result.Items || [];
+  const result = await dynamoDB.send(command);
+  let products = result.Items || [];
 
-    // Filter by search term if provided
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      products = products.filter(product =>
-        product.name?.toLowerCase().includes(term) ||
-        product.overview?.toLowerCase().includes(term)
-      );
-    }
+  // Filter by search term if provided
+  if (searchTerm) {
+    const term = searchTerm.toLowerCase();
+    products = products.filter(product =>
+      product.name?.toLowerCase().includes(term) ||
+      product.overview?.toLowerCase().includes(term)
+    );
+  }
 
-    return products;
+  return products;
   } catch (error) {
     console.error('getAllProducts error:', error);
     // Check if it's a table not found error
@@ -39,7 +39,7 @@ async function getAllProducts(searchTerm = '') {
 async function getProductById(id) {
   const command = new GetCommand({
     TableName: TABLES.PRODUCTS,
-    Key: { id: Number(id) },
+    Key: { id: id }, // UUID is a string, no conversion needed (or keep as-is if products use numeric IDs)
   });
 
   const result = await dynamoDB.send(command);

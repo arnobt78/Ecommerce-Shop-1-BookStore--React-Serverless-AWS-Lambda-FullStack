@@ -18,8 +18,8 @@ module.exports = async function handler(req, res) {
       // Get orders for the authenticated user
       const userIdParam = req.query['user.id'];
       
-      // Verify user can only access their own orders
-      if (userIdParam && Number(userIdParam) !== decoded.id) {
+      // Verify user can only access their own orders (UUID comparison - both are strings)
+      if (userIdParam && userIdParam !== decoded.id) {
         return res.status(403).json({ error: 'Unauthorized' });
       }
 
@@ -32,10 +32,9 @@ module.exports = async function handler(req, res) {
       // Create new order
       const orderData = req.body;
       
-      // Verify the order belongs to the authenticated user (handle type conversion)
-      const userId = Number(orderData.user.id);
-      const decodedId = Number(decoded.id);
-      if (userId !== decodedId) {
+      // Verify the order belongs to the authenticated user (UUID comparison - both are strings)
+      const userId = orderData.user.id;
+      if (userId !== decoded.id) {
         return res.status(403).json({ error: 'Unauthorized: User ID mismatch' });
       }
 

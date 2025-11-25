@@ -21,8 +21,8 @@ module.exports = async function handler(req, res) {
     // Get user ID from query params
     const userId = req.query.id;
 
-    // Check if user is accessing their own data
-    if (Number(userId) !== decoded.id) {
+    // Check if user is accessing their own data (UUID comparison - both are strings)
+    if (userId !== decoded.id) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
