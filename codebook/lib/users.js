@@ -1,7 +1,17 @@
 const { dynamoDB, TABLES } = require('./dynamodb');
 const { GetCommand, PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { hashPassword, comparePassword } = require('./auth');
-const { v4: uuidv4 } = require('uuid');
+
+// Lazy load uuid (ESM module) - will be imported when needed
+let uuidModule = null;
+async function getUuid() {
+  if (!uuidModule) {
+    uuidModule = await import('uuid');
+  }
+  // v4 is a function, we need to call it to generate UUID
+  const { v4: uuidv4 } = uuidModule;
+  return uuidv4();
+}
 
 /**
  * Get user by ID
@@ -64,7 +74,7 @@ async function createUser(userData) {
   }
 
   // Generate UUID for user ID
-  const userId = uuidv4();
+  const userId = await getUuid();
 
   // Hash password
   const hashedPassword = await hashPassword(password);

@@ -1,6 +1,16 @@
 const { dynamoDB, TABLES } = require('./dynamodb');
 const { ScanCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
-const { v4: uuidv4 } = require('uuid');
+
+// Lazy load uuid (ESM module) - will be imported when needed
+let uuidModule = null;
+async function getUuid() {
+  if (!uuidModule) {
+    uuidModule = await import('uuid');
+  }
+  // v4 is a function, we need to call it to generate UUID
+  const { v4: uuidv4 } = uuidModule;
+  return uuidv4();
+}
 
 /**
  * Get orders by user ID
@@ -37,7 +47,7 @@ async function createOrder(orderData) {
     }
 
     // Generate UUID for order ID
-    const orderId = uuidv4();
+    const orderId = await getUuid();
 
     const order = {
       id: orderId, // Use UUID instead of numeric ID
