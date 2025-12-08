@@ -32,13 +32,15 @@ export const ProductsList = () => {
     }
   }, [productData, initialProductList, loading]);
 
-  // Show error toast if API call fails
-  if (error) {
-    toast.error(error.message, {
-      closeButton: true,
-      position: "bottom-center",
-    });
-  }
+  // Show error toast if API call fails (use useEffect to avoid setState during render)
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message || "Failed to load products", {
+        closeButton: true,
+        position: "bottom-right",
+      });
+    }
+  }, [error]);
 
   return (
     <main>

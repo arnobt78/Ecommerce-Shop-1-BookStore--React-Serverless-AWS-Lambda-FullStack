@@ -1,0 +1,985 @@
+# AWS SAM Template for CodeBook Lambda Functions
+#
+# This template defines the infrastructure for deploying Lambda functions.
+# SAM (Serverless Application Model) is an extension of CloudFormation.
+#
+# To deploy: sam build && sam deploy --guided
+#
+# Note: !Ref and !Sub are valid CloudFormation intrinsic functions.
+# Linter warnings about these are false positives - they work correctly in AWS.
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: CodeBook E-Commerce API - AWS Lambda Functions
+
+# Parameters: Secrets and configuration (passed during deployment, NOT committed to Git)
+Parameters:
+  JwtSecret:
+    Type: String
+    Description: JWT secret for token signing
+    NoEcho: true # Hide value in CloudFormation console
+  StripeSecretKey:
+    Type: String
+    Description: Stripe secret key (sk_test_... or sk_live_...)
+    NoEcho: true # Hide value in CloudFormation console
+  StripeWebhookSecret:
+    Type: String
+    Description: Stripe webhook secret (whsec_...)
+    NoEcho: true # Hide value in CloudFormation console
+  BrevoApiKey:
+    Type: String
+    Description: Brevo (Sendinblue) API key for email service
+    NoEcho: true # Hide value in CloudFormation console
+  BrevoSenderEmail:
+    Type: String
+    Description: Brevo sender email address
+    NoEcho: false # Email is not sensitive
+  BrevoAdminEmail:
+    Type: String
+    Description: Brevo admin email address for notifications
+    NoEcho: false # Email is not sensitive
+  ShippoApiKey:
+    Type: String
+    Description: Shippo API key for shipping label generation
+    NoEcho: true # Hide value in CloudFormation console
+
+# Global settings applied to all functions
+Globals:
+  Function:
+    Timeout: 30 # Maximum execution time (seconds)
+    MemorySize: 512 # Memory allocated (MB) - 512MB is good for most APIs
+    Runtime: nodejs22.x # Node.js version (LTS - supported by AWS Lambda)
+    Environment:
+      Variables:
+        # Note: AWS_REGION is automatically set by Lambda - don't include it here
+        # Table names (matching your existing DynamoDB tables)
+        DYNAMODB_TABLE_PRODUCTS: codebook-products
+        DYNAMODB_TABLE_ORDERS: codebook-orders
+        DYNAMODB_TABLE_USERS: codebook-users
+        DYNAMODB_TABLE_ACTIVITY_LOG: codebook-activity-log
+        DYNAMODB_TABLE_TICKETS: codebook-tickets
+        DYNAMODB_TABLE_REVIEWS: codebook-reviews
+        # Note: DYNAMODB_TABLE_FEATURED_PRODUCTS removed - featured products now use featured_product field in products table
+        # Secrets passed as parameters (NOT hardcoded for security)
+        JWT_SECRET: !Ref JwtSecret
+        STRIPE_SECRET_KEY: !Ref StripeSecretKey
+        STRIPE_API_KEY: !Ref StripeSecretKey # Same as STRIPE_SECRET_KEY for compatibility
+        STRIPE_WEBHOOK_SECRET: !Ref StripeWebhookSecret
+        # Brevo email service configuration (passed as parameters for security)
+        BREVO_API_KEY: !Ref BrevoApiKey
+        BREVO_SENDER_EMAIL: !Ref BrevoSenderEmail
+        BREVO_SENDER_NAME: CodeBook Store
+        BREVO_ADMIN_EMAIL: !Ref BrevoAdminEmail
+        # Shippo API configuration (passed as parameter for security)
+        SHIPPO_API_KEY: !Ref ShippoApiKey
+
+# Resources: Define Lambda functions and API Gateway
+Resources:
+  # HTTP API Gateway
+  # This creates a single API endpoint that routes to different Lambda functions
+  CodeBookApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Description: CodeBook E-Commerce HTTP API
+      CorsConfiguration:
+        AllowOrigins:
+          - "*" # Allow all origins (change to your domain in production)
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - "*"
+
+  # Products List Function
+  # GET /products - Returns all products (with optional search)
+  ProductsListFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/products/list.handler # Path to the handler function
+      Description: Get all products with optional search
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # !Ref is a CloudFormation intrinsic function - valid in SAM templates
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /products # API route
+            Method: get # HTTP method
+      # IAM permissions: Allow this function to read from DynamoDB
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-products
+
+  # Product Detail Function
+  # GET /products/{id} - Returns a single product by ID
+  ProductDetailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/products/get.handler # Path to the handler function
+      Description: Get a single product by ID
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /products/{id} # API route with path parameter
+            Method: get # HTTP method
+      # IAM permissions: Allow this function to read from DynamoDB
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-products
+
+  # Product Create Function (Admin Only)
+  # POST /admin/products - Create a new product
+  ProductCreateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/products/create.handler # Path to the handler function
+      Description: Create a new product (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/products # API route
+            Method: post # HTTP method
+      # IAM permissions: Allow this function to write to DynamoDB
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: codebook-products
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+
+  # Product Update Function (Admin Only)
+  # PUT /admin/products/{id} - Update an existing product
+  ProductUpdateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/products/update.handler # Path to the handler function
+      Description: Update an existing product (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/products/{id} # API route with path parameter
+            Method: put # HTTP method
+      # IAM permissions: Allow this function to read and write to DynamoDB
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-products
+        - DynamoDBWritePolicy:
+            TableName: codebook-products
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+
+  # Product Delete Function (Admin Only)
+  # DELETE /admin/products/{id} - Delete a product
+  ProductDeleteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/products/delete.handler # Path to the handler function
+      Description: Delete a product (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/products/{id} # API route with path parameter
+            Method: delete # HTTP method
+      # IAM permissions: Allow this function to read, write, and delete from DynamoDB
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-products
+        - DynamoDBWritePolicy:
+            TableName: codebook-products
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+        # Explicit DeleteItem permission (DynamoDBWritePolicy should include this, but adding explicitly to ensure it works)
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:DeleteItem
+              Resource:
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/codebook-products"
+
+  # Featured Products Function - REMOVED
+  # Featured products are now filtered from products table using featured_product field
+  # No separate table or API endpoint needed
+
+  # Login Function
+  # POST /login - Authenticate user and return JWT token
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/auth/login.handler # Path to the handler function
+      Description: Authenticate user and return JWT token
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /login # API route
+            Method: post # HTTP method
+      # IAM permissions: Allow this function to read from DynamoDB (Users table)
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+
+  # Register Function
+  # POST /register - Create new user and return JWT token
+  RegisterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/auth/register.handler # Path to the handler function
+      Description: Create new user and return JWT token
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /register # API route
+            Method: post # HTTP method
+      # IAM permissions: Allow this function to read and write to DynamoDB (Users table)
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBWritePolicy:
+            TableName: codebook-users
+
+  # Orders Function
+  # GET /orders - Get all orders for authenticated user
+  # POST /orders - Create a new order
+  OrdersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/orders/index.handler # Path to the handler function
+      Description: Get or create orders (requires authentication)
+      Events:
+        OrdersGet:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /orders # API route
+            Method: get # HTTP method for GET requests
+        OrdersPost:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /orders # API route
+            Method: post # HTTP method for POST requests
+      # IAM permissions: Allow this function to read and write to DynamoDB (Orders table)
+      # Also needs read access to Users table to check admin role
+      # Also needs read/write access to Products table to decrement stock when order is created
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-orders
+        - DynamoDBWritePolicy:
+            TableName: codebook-orders
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBReadPolicy:
+            TableName: codebook-products
+        - DynamoDBWritePolicy:
+            TableName: codebook-products
+
+  # Admin Users Function
+  # GET /admin/users - Get all users (admin only)
+  AdminUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/users.handler # Path to the handler function
+      Description: Get all users (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/users # API route
+            Method: get # HTTP method
+      # IAM permissions: Allow this function to read from DynamoDB (Users table)
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+
+  # Admin User Detail Function
+  # GET /admin/users/{id} - Get user by ID (admin only)
+  AdminUserDetailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/user-detail.handler # Path to the handler function
+      Description: Get user by ID (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/users/{id} # API route with path parameter
+            Method: get # HTTP method
+      # IAM permissions: Allow this function to read from DynamoDB (Users table)
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+
+  # Admin User Update Function
+  # PUT /admin/users/{id} - Update user (admin only)
+  AdminUserUpdateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/user-update.handler # Path to the handler function
+      Description: Update user (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/users/{id} # API route with path parameter
+            Method: put # HTTP method
+      # IAM permissions: Allow this function to read and write to DynamoDB (Users table)
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBWritePolicy:
+            TableName: codebook-users
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+
+  # Admin User Delete Function
+  # DELETE /admin/users/{id} - Delete user (admin only)
+  AdminUserDeleteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/user-delete.handler # Path to the handler function
+      Description: Delete user (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/users/{id} # API route with path parameter
+            Method: delete # HTTP method
+      # IAM permissions: Allow this function to read, write, and delete from DynamoDB (Users table)
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBWritePolicy:
+            TableName: codebook-users
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+        # Explicit DeleteItem permission
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:DeleteItem
+              Resource:
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/codebook-users"
+
+  # Admin Orders Function
+  # GET /admin/orders - Get all orders (admin only)
+  AdminOrdersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/orders.handler # Path to the handler function
+      Description: Get all orders (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/orders # API route
+            Method: get # HTTP method
+      # IAM permissions: Allow this function to read from DynamoDB (Orders table)
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-orders
+
+  # Admin Order Detail Function
+  # GET /admin/orders/{id} - Get order by ID (admin only)
+  AdminOrderDetailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/order-detail.handler # Path to the handler function
+      Description: Get order by ID (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/orders/{id} # API route with path parameter
+            Method: get # HTTP method
+      # IAM permissions: Allow this function to read from DynamoDB (Orders table)
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-orders
+
+  # Admin Order Status Update Function
+  # PUT /admin/orders/{id}/status - Update order status (admin only)
+  AdminOrderStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/order-status.handler # Path to the handler function
+      Description: Update order status (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/orders/{id}/status # API route with path parameter
+            Method: put # HTTP method
+      # IAM permissions: Allow this function to read and write to DynamoDB (Orders table)
+      # Also needs read/write access to Products table to restore stock when order is cancelled
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-orders
+        - DynamoDBWritePolicy:
+            TableName: codebook-orders
+        - DynamoDBReadPolicy:
+            TableName: codebook-products
+        - DynamoDBWritePolicy:
+            TableName: codebook-products
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+
+  # Admin Order Refund Function
+  # POST /admin/orders/{id}/refund - Process refund for order (admin only)
+  AdminOrderRefundFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/refund-order.handler # Path to the handler function
+      Description: Process refund for order (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/orders/{id}/refund # API route with path parameter
+            Method: post # HTTP method
+      # IAM permissions: Allow this function to read and write to DynamoDB (Orders table)
+      # Also needs read/write access to Products table to restore stock when order is refunded
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-orders
+        - DynamoDBWritePolicy:
+            TableName: codebook-orders
+        - DynamoDBReadPolicy:
+            TableName: codebook-products
+        - DynamoDBWritePolicy:
+            TableName: codebook-products
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+      # Environment variables: Stripe secret key is already in Globals
+
+  # Admin Generate Label Function
+  # POST /admin/orders/{id}/generate-label - Generate shipping label via Shippo API (admin only)
+  AdminGenerateLabelFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/generate-label.handler # Path to the handler function
+      Description: Generate shipping label via Shippo API (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/orders/{id}/generate-label # API route with path parameter
+            Method: post # HTTP method
+      # IAM permissions: Allow this function to read and write to DynamoDB (Orders table)
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-orders
+        - DynamoDBWritePolicy:
+            TableName: codebook-orders
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+      # Environment variables: Shippo API key is already in Globals
+
+  # Admin Add Tracking Function
+  # POST /admin/orders/{id}/tracking - Add manual tracking number (admin only)
+  AdminAddTrackingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/add-tracking.handler # Path to the handler function
+      Description: Add manual tracking number to order (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/orders/{id}/tracking # API route with path parameter
+            Method: post # HTTP method
+      # IAM permissions: Allow this function to read and write to DynamoDB (Orders table)
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-orders
+        - DynamoDBWritePolicy:
+            TableName: codebook-orders
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+
+  # Migration Function - REMOVED
+  # Migration completed successfully. Function removed to clean up infrastructure.
+  # Featured products now use Number (1/0) type for GSI support.
+
+  # Payment Create Intent Function
+  # POST /payment/create-intent - Create Stripe payment intent
+  PaymentCreateIntentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/payment/create-intent.handler # Path to the handler function
+      Description: Create Stripe payment intent for checkout
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /payment/create-intent # API route
+            Method: post # HTTP method
+      # IAM permissions: No DynamoDB access needed (payment only)
+      # Note: Stripe API key is in environment variables
+
+  # Payment Webhook Function
+  # POST /payment/webhook - Handle Stripe webhook events
+  PaymentWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/payment/webhook.handler # Path to the handler function
+      Description: Handle Stripe webhook events (payment success, failure, etc.)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /payment/webhook # API route
+            Method: post # HTTP method
+      # IAM permissions: Allow this function to write to DynamoDB (Orders table)
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-orders
+        - DynamoDBWritePolicy:
+            TableName: codebook-orders
+      # Note: Webhook does not require JWT auth (uses Stripe signature verification)
+
+  # Payment Verify Function
+  # GET /payment/verify/{id} - Verify payment status
+  PaymentVerifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/payment/verify.handler # Path to the handler function
+      Description: Verify Stripe payment intent status
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /payment/verify/{id} # API route with path parameter
+            Method: get # HTTP method
+      # IAM permissions: No DynamoDB access needed (Stripe API only)
+      # Note: Stripe API key is in environment variables
+
+  # Email Send Function
+  # POST /email/send - Send transactional emails via Brevo
+  EmailSendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/email/send-email.handler # Path to the handler function
+      Description: Send transactional emails via Brevo API
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /email/send # API route
+            Method: post # HTTP method
+      # IAM permissions: No DynamoDB access needed (Brevo API only)
+      # Note: Brevo API key is in environment variables
+
+  # Notification Count Function
+  # GET /notifications/count - Get unread notification count
+  NotificationCountFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/notifications/count.handler # Path to the handler function
+      Description: Get unread notification count for authenticated user
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /notifications/count # API route
+            Method: get # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBReadPolicy:
+            TableName: codebook-orders
+        - DynamoDBReadPolicy:
+            TableName: codebook-tickets
+
+  # Mark Notifications Read Function
+  # POST /notifications/mark-read - Mark notifications as read
+  NotificationMarkReadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/notifications/mark-read.handler # Path to the handler function
+      Description: Mark user notifications as read
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /notifications/mark-read # API route
+            Method: post # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBWritePolicy:
+            TableName: codebook-users
+
+  # Admin Activity Logs Function
+  # GET /admin/activity-logs - Get activity logs (admin only)
+  AdminActivityLogsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/activity-logs.handler # Path to the handler function
+      Description: Get activity logs for admin panel
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/activity-logs # API route
+            Method: get # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-activity-log
+
+  # Create Ticket Function
+  # POST /tickets - Create a new support ticket
+  TicketCreateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/tickets/create.handler # Path to the handler function
+      Description: Create a new support ticket
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /tickets # API route
+            Method: post # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBWritePolicy:
+            TableName: codebook-tickets
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+
+  # Get Tickets Function
+  # GET /tickets - Get all tickets (admin) or user's tickets (customer)
+  TicketsListFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/tickets/list.handler # Path to the handler function
+      Description: Get support tickets (all for admin, own for customer)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /tickets # API route
+            Method: get # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBReadPolicy:
+            TableName: codebook-tickets
+
+  # Get Single Ticket Function
+  # GET /tickets/{ticketId} - Get a single ticket by ID
+  TicketGetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/tickets/get.handler # Path to the handler function
+      Description: Get a single support ticket by ID
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /tickets/{ticketId} # API route with path parameter
+            Method: get # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBReadPolicy:
+            TableName: codebook-tickets
+
+  # Reply to Ticket Function
+  # POST /tickets/{ticketId}/reply - Add a reply to a ticket
+  TicketReplyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/tickets/reply.handler # Path to the handler function
+      Description: Add a reply to a support ticket
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /tickets/{ticketId}/reply # API route with path parameter
+            Method: post # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBReadPolicy:
+            TableName: codebook-tickets
+        - DynamoDBWritePolicy:
+            TableName: codebook-tickets
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+
+  # Update Ticket Status Function
+  # PUT /tickets/{ticketId}/status - Update ticket status (admin only)
+  TicketUpdateStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/tickets/update-status.handler # Path to the handler function
+      Description: Update ticket status (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /tickets/{ticketId}/status # API route with path parameter
+            Method: put # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBReadPolicy:
+            TableName: codebook-tickets
+        - DynamoDBWritePolicy:
+            TableName: codebook-tickets
+        - DynamoDBWritePolicy:
+            TableName: codebook-activity-log
+
+  # Reviews List Function
+  # GET /reviews?productId=xxx - Get reviews for a product
+  ReviewsListFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/reviews/list.handler # Path to the handler function
+      Description: Get reviews for a product
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /reviews # API route
+            Method: get # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-reviews
+
+  # Create Review Function
+  # POST /reviews - Create a new product review
+  ReviewCreateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/reviews/create.handler # Path to the handler function
+      Description: Create a new product review
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /reviews # API route
+            Method: post # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBReadPolicy:
+            TableName: codebook-orders
+        - DynamoDBReadPolicy:
+            TableName: codebook-reviews
+        - DynamoDBWritePolicy:
+            TableName: codebook-reviews
+
+  # Update Review Function
+  # PUT /reviews/{id} - Update a review
+  ReviewUpdateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/reviews/update.handler # Path to the handler function
+      Description: Update a review
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /reviews/{id} # API route with path parameter
+            Method: put # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBReadPolicy:
+            TableName: codebook-reviews
+        - DynamoDBWritePolicy:
+            TableName: codebook-reviews
+
+  # Delete Review Function
+  # DELETE /reviews/{id} - Delete a review
+  ReviewDeleteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/reviews/delete.handler # Path to the handler function
+      Description: Delete a review
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /reviews/{id} # API route with path parameter
+            Method: delete # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBReadPolicy:
+            TableName: codebook-reviews
+        - DynamoDBWritePolicy:
+            TableName: codebook-reviews
+        # Explicit DeleteItem permission (DynamoDBWritePolicy should include this, but adding explicitly to ensure it works)
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:DeleteItem
+              Resource:
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/codebook-reviews"
+
+  # Admin Reviews List Function
+  # GET /admin/reviews - Get all reviews for moderation (admin only)
+  AdminReviewsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/reviews.handler # Path to the handler function
+      Description: Get all reviews for admin moderation
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/reviews # API route
+            Method: get # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBReadPolicy:
+            TableName: codebook-reviews
+
+  # Admin Review Update Function
+  # PUT /admin/reviews/{id} - Update review status for moderation (admin only)
+  AdminReviewUpdateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: . # Package the entire aws-lambda directory (includes shared folder)
+      Handler: functions/admin/review-update.handler # Path to the handler function
+      Description: Update review status for moderation (admin only)
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            # yamllint disable-line rule:unresolved-tag
+            ApiId: !Ref CodeBookApi # Reference to the HTTP API above
+            Path: /admin/reviews/{id} # API route with path parameter
+            Method: put # HTTP method
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: codebook-users
+        - DynamoDBReadPolicy:
+            TableName: codebook-reviews
+        - DynamoDBWritePolicy:
+            TableName: codebook-reviews
+
+# Outputs: Values returned after deployment
+Outputs:
+  ApiUrl:
+    Description: "HTTP API endpoint URL"
+    # !Sub is a CloudFormation intrinsic function - valid in SAM templates
+    # yamllint disable-line rule:unresolved-tag
+    Value: !Sub "https://${CodeBookApi}.execute-api.${AWS::Region}.amazonaws.com"
+    Export:
+      Name: CodeBookApiUrl

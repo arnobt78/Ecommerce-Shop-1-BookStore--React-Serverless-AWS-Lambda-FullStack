@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCart } from "../../../context";
 import { createOrder } from "../../../services";
 import { useUser } from "../../../hooks/useUser";
+import { invalidateAfterOrderCreation } from "../../../utils/queryInvalidation";
 
 export const Checkout = ({ setCheckout }) => {
   const { cartList, total, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Use React Query hook - automatically handles caching, deduplication, and loading states
   const { data: user = {}, error } = useUser();
@@ -17,7 +20,7 @@ export const Checkout = ({ setCheckout }) => {
   if (error) {
     toast.error(error.message, {
       closeButton: true,
-      position: "bottom-center",
+      position: "bottom-right",
     });
   }
 
@@ -27,11 +30,24 @@ export const Checkout = ({ setCheckout }) => {
     try {
       const data = await createOrder(cartList, total, user);
       clearCart();
+
+      // Get user ID from sessionStorage to match the query key
+      let userId = null;
+      try {
+        userId = JSON.parse(sessionStorage.getItem("cbid"));
+      } catch {
+        userId = null;
+      }
+
+      // Invalidate all relevant queries (user orders + admin queries)
+      // This ensures both user dashboard and admin dashboard update immediately
+      invalidateAfterOrderCreation(queryClient, userId);
+
       navigate("/order-summary", { state: { data: data, status: true } });
     } catch (error) {
       toast.error(error.message, {
         closeButton: true,
-        position: "bottom-center",
+        position: "bottom-right",
       });
       navigate("/order-summary", { state: { status: false } });
     } finally {

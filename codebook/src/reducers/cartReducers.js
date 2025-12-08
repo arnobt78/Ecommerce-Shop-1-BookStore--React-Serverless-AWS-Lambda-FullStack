@@ -1,3 +1,11 @@
+/**
+ * Cart Reducer
+ * 
+ * Manages cart state with quantity tracking.
+ * Cart structure: Array of objects with { product, quantity }
+ * Each product in cart has a quantity field (default: 1)
+ */
+
 export const cartReducer = (state, action) => {
     const { type, payload } = action;
 
@@ -7,6 +15,9 @@ export const cartReducer = (state, action) => {
             return {...state, cartList: payload.products, total: payload.total}
         
         case "REMOVE_FROM_CART":
+            return {...state, cartList: payload.products, total: payload.total}
+        
+        case "UPDATE_QUANTITY":
             return {...state, cartList: payload.products, total: payload.total}
         
         case "CLEAR_CART":

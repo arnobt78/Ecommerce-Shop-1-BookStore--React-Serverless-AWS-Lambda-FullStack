@@ -1,0 +1,35 @@
+{
+  "version": "2.0",
+  "routeKey": "GET /products",
+  "rawPath": "/products",
+  "rawQueryString": "",
+  "headers": {
+    "accept": "application/json",
+    "content-type": "application/json",
+    "host": "d4vvkswb4a.execute-api.eu-north-1.amazonaws.com",
+    "user-agent": "curl/8.7.1",
+    "x-forwarded-for": "127.0.0.1",
+    "x-forwarded-port": "443",
+    "x-forwarded-proto": "https"
+  },
+  "requestContext": {
+    "accountId": "849695476938",
+    "apiId": "d4vvkswb4a",
+    "domainName": "d4vvkswb4a.execute-api.eu-north-1.amazonaws.com",
+    "domainPrefix": "d4vvkswb4a",
+    "http": {
+      "method": "GET",
+      "path": "/products",
+      "protocol": "HTTP/1.1",
+      "sourceIp": "127.0.0.1",
+      "userAgent": "curl/8.7.1"
+    },
+    "requestId": "test-request-id",
+    "routeKey": "GET /products",
+    "stage": "$default",
+    "time": "30/Nov/2025:15:30:00 +0000",
+    "timeEpoch": 1732987800000
+  },
+  "isBase64Encoded": false
+}
+

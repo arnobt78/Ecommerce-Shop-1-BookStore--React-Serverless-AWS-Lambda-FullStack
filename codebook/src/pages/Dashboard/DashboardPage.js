@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useTitle } from "../../hooks/useTitle";
 import { useUserOrders } from "../../hooks/useUser";
@@ -10,6 +10,7 @@ export const DashboardPage = () => {
   useTitle("Dashboard");
 
   // Use React Query hook - automatically handles caching, deduplication, and loading states
+  // refetchOnMount is enabled by default, so it will check for new data when component mounts
   const { data: orders = [], isLoading: loading, error } = useUserOrders();
 
   // Sort orders by date (most recent first) - using useMemo to avoid re-sorting on every render
@@ -21,19 +22,26 @@ export const DashboardPage = () => {
     });
   }, [orders]);
 
-  // Show error toast if API call fails
-  if (error) {
-    toast.error(error.message, {
-      closeButton: true,
-      position: "bottom-center",
-    });
-  }
+  // Calculate total orders count
+  const totalOrders = useMemo(() => {
+    return orders.length;
+  }, [orders.length]);
+
+  // Show error toast if API call fails (use useEffect to avoid render-time side effects)
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message, {
+        closeButton: true,
+        position: "bottom-right",
+      });
+    }
+  }, [error]);
 
   return (
     <main>
       <section>
         <p className="text-2xl text-center font-semibold dark:text-slate-100 my-10 underline underline-offset-8">
-          My Dashboard
+          My Dashboard {totalOrders > 0 && <span className="text-lg font-normal text-gray-600 dark:text-gray-400">({totalOrders} {totalOrders === 1 ? 'order' : 'orders'})</span>}
         </p>
       </section>
 

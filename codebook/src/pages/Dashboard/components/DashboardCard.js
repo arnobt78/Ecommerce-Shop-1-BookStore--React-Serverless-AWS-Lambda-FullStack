@@ -1,4 +1,10 @@
 import { Link } from "react-router-dom";
+import {
+  getProductImageUrl,
+  getProductImageKey,
+} from "../../../utils/productImage";
+import { formatPrice } from "../../../utils/formatPrice";
+import { StatusBadge, OrderTrackingInfo } from "../../../components/ui";
 
 export const DashboardCard = ({ order }) => {
   // Format order date
@@ -45,18 +51,47 @@ export const DashboardCard = ({ order }) => {
             {formatDate(order.createdAt)}
           </span>
 
-          {/* Quantity Badge */}
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-            <i className="bi bi-box-seam mr-1.5"></i>
-            {order.quantity || order.cartList?.length || 0} item
-            {order.quantity !== 1 ? "s" : ""}
-          </span>
+          {/* Order Status Badge and Quantity Badge - Same Row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <StatusBadge
+              status={order.status || "pending"}
+              customLabels={{
+                pending: "Pending",
+                processing: "Processing",
+                shipped: "Shipped",
+                delivered: "Delivered",
+                cancelled: "Cancelled",
+                refunded: "Refunded",
+              }}
+            />
+
+            {/* Quantity Badge */}
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+              <i className="bi bi-box-seam mr-1.5"></i>
+              {order.cartList?.reduce(
+                (sum, item) => sum + (item.quantity || 1),
+                0
+              ) ||
+                order.quantity ||
+                order.cartList?.length ||
+                0}{" "}
+              item
+              {(order.cartList?.reduce(
+                (sum, item) => sum + (item.quantity || 1),
+                0
+              ) ||
+                order.quantity ||
+                order.cartList?.length ||
+                0) !== 1
+                ? "s"
+                : ""}
+            </span>
+          </div>
         </div>
 
         {/* Total Amount Badge */}
         <span className="inline-flex items-center px-4 py-2 rounded-lg text-lg font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border border-green-200 dark:border-green-800">
-          <i className="bi bi-currency-dollar mr-1.5"></i>$
-          {order.amount_paid?.toFixed(2) || "0.00"}
+          ${formatPrice(order.amount_paid)}
         </span>
       </div>
 
@@ -69,8 +104,23 @@ export const DashboardCard = ({ order }) => {
               <Link to={`/products/${product.id}`} className="flex-shrink-0">
                 <img
                   className="w-full sm:w-32 h-auto sm:h-32 rounded-lg object-cover border border-gray-200 dark:border-slate-700 hover:opacity-90 transition-opacity"
-                  src={product.poster}
-                  alt={product.name}
+                  src={
+                    getProductImageUrl(product) || "/assets/images/10001.avif"
+                  }
+                  key={getProductImageKey(product)}
+                  alt={product.name || "Product"}
+                  onError={(e) => {
+                    // Fallback to local image if poster fails to load
+                    if (
+                      e.target.src !== product.image_local &&
+                      product.image_local
+                    ) {
+                      e.target.src = product.image_local;
+                    } else {
+                      // Final fallback to default image
+                      e.target.src = "/assets/images/10001.avif";
+                    }
+                  }}
                 />
               </Link>
 
@@ -85,23 +135,31 @@ export const DashboardCard = ({ order }) => {
 
                   {/* Product Badges */}
                   <div className="flex flex-wrap gap-2 mb-2">
+                    {/* Quantity Badge - Show quantity for this specific product */}
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                      <i className="bi bi-123 mr-1 text-xs"></i>
+                      Qty: {product.quantity || 1}
+                    </span>
+
                     {product.best_seller && (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                         <i className="bi bi-star-fill mr-1 text-xs"></i>
                         Best Seller
                       </span>
                     )}
-                    {product.in_stock ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                        <i className="bi bi-check-circle mr-1 text-xs"></i>
-                        In Stock
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
-                        <i className="bi bi-x-circle mr-1 text-xs"></i>
-                        Out of Stock
-                      </span>
-                    )}
+                    {/* Show stock status at time of order (informational) */}
+                    {product.in_stock !== undefined &&
+                      (product.in_stock ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <i className="bi bi-check-circle mr-1 text-xs"></i>
+                          In Stock
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                          <i className="bi bi-info-circle mr-1 text-xs"></i>
+                          Out of Stock (at time of order)
+                        </span>
+                      ))}
                     {product.size && (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                         <i className="bi bi-file-earmark mr-1 text-xs"></i>
@@ -113,8 +171,14 @@ export const DashboardCard = ({ order }) => {
 
                 {/* Product Price */}
                 <div className="mt-2 sm:mt-0">
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    ${formatPrice(product.price)} each
+                  </div>
                   <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100">
-                    ${product.price?.toFixed(2) || "0.00"}
+                    $
+                    {formatPrice(
+                      (product.price || 0) * (product.quantity || 1)
+                    )}
                   </span>
                 </div>
               </div>
@@ -127,6 +191,10 @@ export const DashboardCard = ({ order }) => {
           </div>
         ))}
       </div>
+
+      {/* Shipping & Tracking Information */}
+      {/* Only shows for shipped/delivered orders, hides for cancelled/refunded */}
+      <OrderTrackingInfo order={order} />
     </div>
   );
 };

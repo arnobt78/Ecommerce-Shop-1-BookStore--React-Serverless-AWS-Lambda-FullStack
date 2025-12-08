@@ -1,12 +1,15 @@
 import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTitle } from "../hooks/useTitle";
 import { login } from "../services";
+import { getNotificationCount } from "../services/notificationService";
 
 export const Login = () => {
   useTitle("Login");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const email = useRef();
   const password = useRef();
   const [selectedRole, setSelectedRole] = useState("");
@@ -64,6 +67,17 @@ export const Login = () => {
           // Default to 'user' for regular logins
           sessionStorage.setItem("userRole", "user");
         }
+        // Clear React Query cache to prevent showing previous user's data
+        queryClient.clear();
+        
+        // Prefetch notification count so it's ready when dropdown opens
+        // This eliminates the 1-2ms delay when opening the dropdown
+        queryClient.prefetchQuery({
+          queryKey: ["notification-count"],
+          queryFn: getNotificationCount,
+          staleTime: 0, // Always fetch fresh count on login
+        });
+        
         navigate("/products");
       } else {
         toast.error(data);
@@ -71,7 +85,7 @@ export const Login = () => {
     } catch (error) {
       toast.error(error.message, {
         closeButton: true,
-        position: "bottom-center",
+        position: "bottom-right",
       });
     }
   }

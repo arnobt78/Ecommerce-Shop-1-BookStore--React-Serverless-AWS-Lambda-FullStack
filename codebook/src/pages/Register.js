@@ -1,11 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTitle } from "../hooks/useTitle";
 import { register } from "../services";
+import { invalidateAfterUserRegistration } from "../utils/queryInvalidation";
 
 export const Register = () => {
   useTitle("Register");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   async function handleRegister(event) {
     event.preventDefault();
@@ -16,11 +19,22 @@ export const Register = () => {
         password: event.target.password.value,
       };
       const data = await register(authDetail);
-      data.accessToken ? navigate("/products") : toast.error(data);
+      if (data.accessToken) {
+        // Clear React Query cache to prevent showing previous user's data
+        queryClient.clear();
+
+        // Invalidate admin queries so admin dashboard updates immediately
+        // (new user registration affects "Total Users" metric)
+        invalidateAfterUserRegistration(queryClient);
+
+        navigate("/products");
+      } else {
+        toast.error(data);
+      }
     } catch (error) {
       toast.error(error.message, {
         closeButton: true,
-        position: "bottom-center",
+        position: "bottom-right",
       });
     }
   }

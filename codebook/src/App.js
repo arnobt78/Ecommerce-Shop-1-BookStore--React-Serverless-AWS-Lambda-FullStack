@@ -1,27 +1,22 @@
-import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { AllRoutes } from "./routes/AllRoutes";
 import { Footer, Header } from "./components";
-import { getFeaturedList } from "./services";
 
 function App() {
-  const queryClient = useQueryClient();
+  const location = useLocation();
+  
+  // Check if current route is an admin route
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
-  // Prefetch featured products on app mount for instant display
-  useEffect(() => {
-    // Prefetch featured products - this will cache them immediately
-    queryClient.prefetchQuery({
-      queryKey: ['featured-products'],
-      queryFn: getFeaturedList,
-      staleTime: 60 * 60 * 1000, // 1 hour
-    });
-  }, [queryClient]);
+  // Note: Featured products are now filtered from products list
+  // No need to prefetch separately - products query handles it
 
   return (
     <div className="App dark:bg-dark">
-      <Header />
+      {/* Hide Header and Footer on admin routes */}
+      {!isAdminRoute && <Header />}
       <AllRoutes />
-      <Footer />
+      {!isAdminRoute && <Footer />}
     </div>
   );
 }

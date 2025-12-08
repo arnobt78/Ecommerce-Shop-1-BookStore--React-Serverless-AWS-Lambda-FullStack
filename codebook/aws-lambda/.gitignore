@@ -1,0 +1,138 @@
+# ============================================
+# AWS Lambda / SAM Project - Git Ignore Rules
+# ============================================
+# This file ensures sensitive data and build artifacts are NOT committed to Git
+
+# ============================================
+# SECRETS & CREDENTIALS (NEVER COMMIT!)
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.secrets              # Secrets file with actual API keys, passwords, tokens
+.env.production
+.env.development
+*.pem                     # Private keys
+*.key                     # Key files
+credentials               # AWS credentials file
+.aws/credentials          # AWS credentials directory
+secrets.json              # Any file named secrets
+config.secrets.*          # Secret config files
+
+# ============================================
+# AWS SAM Build Artifacts
+# ============================================
+.aws-sam/                 # SAM build output directory
+**/.aws-sam/              # SAM build output in any subdirectory
+samconfig.toml            # SAM config (only ignore if it contains secrets)
+                         # Note: If samconfig.toml only has stack name/region, it's safe to commit
+                         # But if it has parameter overrides with secrets, add it here
+
+# ============================================
+# Dependencies
+# ============================================
+node_modules/             # NPM dependencies
+**/node_modules/          # NPM dependencies in any subdirectory
+yarn.lock                 # Yarn lock file (optional - can commit if using yarn)
+.pnp/                     # Yarn PnP files
+
+# ============================================
+# Logs & Debug Files
+# ============================================
+*.log                     # All log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+*.log.*                   # Rotated log files
+
+# ============================================
+# OS Files
+# ============================================
+.DS_Store                 # macOS
+.DS_Store?
+._*                       # macOS resource forks
+.Spotlight-V100
+.Trashes
+ehthumbs.db               # Windows
+Thumbs.db                 # Windows
+Desktop.ini               # Windows
+
+# ============================================
+# IDE & Editor Files
+# ============================================
+.vscode/                  # VS Code settings (can commit .vscode/settings.json if needed)
+.idea/                    # IntelliJ IDEA
+*.swp                     # Vim swap files
+*.swo                     # Vim swap files
+*~                        # Backup files
+.project
+.classpath
+.settings/
+
+# ============================================
+# Test Coverage & Reports
+# ============================================
+coverage/                 # Test coverage reports
+.nyc_output/              # NYC test coverage
+*.lcov                    # Coverage data
+test-results/             # Test results
+junit.xml                 # Test reports
+
+# ============================================
+# Temporary & Cache Files
+# ============================================
+*.tmp
+*.temp
+.cache/                   # Build cache
+.temp/                    # Temporary files
+*.cache                   # Cache files
+.parcel-cache/            # Parcel cache
+.next/                    # Next.js build (if used)
+.nuxt/                    # Nuxt.js build (if used)
+dist/                     # Distribution/build output
+build/                    # Build output
+out/                      # Output directory
+
+# ============================================
+# Python (if using Python Lambda functions)
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/                      # Python virtual environment
+venv/                     # Python virtual environment
+ENV/                      # Python virtual environment
+.venv                     # Python virtual environment
+
+# ============================================
+# TypeScript (if using TypeScript)
+# ============================================
+*.tsbuildinfo             # TypeScript build info
+.tsbuildinfo
+
+# ============================================
+# Lambda Deployment Packages
+# ============================================
+*.zip                     # Lambda deployment packages (if created manually)
+lambda-*.zip              # Lambda function packages
+deployment-package.zip    # Deployment packages
+
+# ============================================
+# Documentation with Secrets
+# ============================================
+# If you create any docs with actual secrets, add them here
+# SECRETS.md
+# credentials.txt
+# api-keys.txt
+
+# ============================================
+# CloudFormation / SAM Templates with Secrets
+# ============================================
+# Note: template.yaml should use parameters (no secrets)
+# If you create a template with hardcoded secrets, add it here:
+# template.secrets.yaml
+# template.production.yaml (if it has secrets)
+

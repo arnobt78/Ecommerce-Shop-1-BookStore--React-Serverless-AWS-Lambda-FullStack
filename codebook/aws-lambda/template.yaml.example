@@ -1,0 +1,45 @@
+# AWS SAM Template Example (Safe to commit to Git)
+#
+# This is an example file showing the structure without actual secrets.
+# Copy this to template.yaml and add your actual secrets via parameters.
+#
+# DO NOT commit template.yaml with actual secrets to GitHub!
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: CodeBook E-Commerce API - AWS Lambda Functions
+
+# Parameters: Secrets and configuration (passed during deployment)
+Parameters:
+  JwtSecret:
+    Type: String
+    Description: JWT secret for token signing
+    NoEcho: true
+  StripeSecretKey:
+    Type: String
+    Description: Stripe secret key (sk_test_... or sk_live_...)
+    NoEcho: true
+  StripeWebhookSecret:
+    Type: String
+    Description: Stripe webhook secret (whsec_...)
+    NoEcho: true
+
+# Global settings applied to all functions
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs22.x
+    Environment:
+      Variables:
+        DYNAMODB_TABLE_PRODUCTS: codebook-products
+        DYNAMODB_TABLE_ORDERS: codebook-orders
+        DYNAMODB_TABLE_USERS: codebook-users
+        # Secrets passed as parameters
+        JWT_SECRET: !Ref JwtSecret
+        STRIPE_SECRET_KEY: !Ref StripeSecretKey
+        STRIPE_API_KEY: !Ref StripeSecretKey
+        STRIPE_WEBHOOK_SECRET: !Ref StripeWebhookSecret
+
+# ... rest of the template (Resources, Outputs, etc.)
+

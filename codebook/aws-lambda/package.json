@@ -1,0 +1,18 @@
+{
+  "name": "codebook-lambda",
+  "version": "1.0.0",
+  "description": "AWS Lambda functions for CodeBook e-commerce API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.936.0",
+    "@aws-sdk/lib-dynamodb": "^3.936.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "qrcode": "^1.5.4",
+    "stripe": "^20.0.0",
+    "uuid": "^9.0.1"
+  }
+}

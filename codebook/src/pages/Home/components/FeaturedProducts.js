@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { toast } from "react-toastify";
 import { ProductCard, ProductCardSkeleton } from "../../../components";
 import { useFeaturedProducts } from "../../../hooks/useProducts";
@@ -12,13 +13,15 @@ export const FeaturedProducts = () => {
     error,
   } = useFeaturedProducts();
 
-  // Show error toast if API call fails
-  if (error) {
-    toast.error(error.message, {
-      closeButton: true,
-      position: "bottom-center",
-    });
-  }
+  // Show error toast if API call fails (use useEffect to avoid setState during render)
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message || "Failed to load featured products", {
+        closeButton: true,
+        position: "bottom-right",
+      });
+    }
+  }, [error]);
 
   // Only show skeleton if we have no data AND we're loading
   // If cached data exists, show it immediately (even if refetching in background)
