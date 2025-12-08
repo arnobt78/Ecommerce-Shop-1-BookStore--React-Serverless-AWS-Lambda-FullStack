@@ -49,29 +49,29 @@
 
 ## Architecture Overview
 
-```text
+```bash
 ┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (React)                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Pages      │  │  Components   │  │    Hooks     │      │
-│  │              │  │              │  │              │      │
-│  │  - Home      │  │  - UI Cards  │  │  - useQuery  │      │
-│  │  - Products  │  │  - Forms     │  │  - useAuth   │      │
-│  │  - Cart      │  │  - Tables    │  │  - useCart  │      │
-│  │  - Admin     │  │  - Layouts   │  │  - ...       │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│                                                              │
+│                    Frontend (React)                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │   Pages      │  │  Components  │  │    Hooks     │       │
+│  │              │  │              │  │              │       │
+│  │  - Home      │  │  - UI Cards  │  │  - useQuery  │       │
+│  │  - Products  │  │  - Forms     │  │  - useAuth   │       │
+│  │  - Cart      │  │  - Tables    │  │  - useCart   │       │
+│  │  - Admin     │  │  - Layouts   │  │  - ...       │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+│                                                             │
 │  Deployed on: Vercel                                        │
-└───────────────────────┬───────────────────────────────────────┘
-                       │
-                       │ HTTPS Requests
-                       │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+                        │ HTTPS Requests
+                        │
 ┌───────────────────────▼───────────────────────────────────────┐
-│              AWS API Gateway (HTTP API)                        │
+│              AWS API Gateway (HTTP API)                       │
 │                                                               │
-│  Routes requests to appropriate Lambda functions             │
+│  Routes requests to appropriate Lambda functions              │
 └───────────────────────┬───────────────────────────────────────┘
-                       │
+                        │
         ┌───────────────┼───────────────┐
         │               │               │
 ┌───────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐
@@ -80,17 +80,17 @@
 └───────┬──────┘ └──────┬──────┘ └──────┬──────┘
         │               │               │
         └───────────────┼───────────────┘
-                       │
-            ┌──────────▼──────────┐
-            │    AWS DynamoDB     │
-            │                      │
-            │  - products          │
-            │  - orders            │
-            │  - users             │
-            │  - reviews           │
-            │  - tickets           │
-            │  - activity-log      │
-            └──────────────────────┘
+                        │
+             ┌──────────▼──────────┐
+             │    AWS DynamoDB     │
+             │                     │
+             │  - products         │
+             │  - orders           │
+             │  - users            │
+             │  - reviews          │
+             │  - tickets          │
+             │  - activity-log     │
+             └─────────────────────┘
 ```
 
 ---
