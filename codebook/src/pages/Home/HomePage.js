@@ -5,14 +5,14 @@ import { Testimonials } from "./components/Testimonials";
 import { Faq } from "./components/Faq";
 
 export const HomePage = () => {
-  useTitle("Access Latest Computer Science eBooks");
+  useTitle("CodeBook – Latest Computer Science E-Books, Codebooks & Learning");
 
   return (
     <main>
-        <Hero />
-        <FeaturedProducts />
-        <Testimonials />
-        <Faq />
+      <Hero />
+      <FeaturedProducts />
+      <Testimonials />
+      <Faq />
     </main>
-  )
-}
+  );
+};
