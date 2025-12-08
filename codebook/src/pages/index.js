@@ -11,7 +11,7 @@ export { PaymentCancelPage } from "./Payment/PaymentCancelPage";
 export { Login } from "./Login";
 export { Register } from "./Register";
 
-export { AdminDashboardPage, AdminProductsPage, AdminProductCreatePage, AdminProductEditPage, AdminProductDetailPage, AdminOrdersPage, AdminOrderDetailPage, AdminUsersPage, AdminUserDetailPage, AdminUserEditPage, AdminAnalyticsPage, AdminHistoryPage, AdminTicketsPage, AdminReviewsPage } from "./Admin";
+export { AdminDashboardPage, AdminProductsPage, AdminProductCreatePage, AdminProductEditPage, AdminProductDetailPage, AdminOrdersPage, AdminOrderDetailPage, AdminUsersPage, AdminUserDetailPage, AdminUserEditPage, AdminAnalyticsPage, AdminHistoryPage, AdminTicketsPage, AdminReviewsPage, AdminSettingsPage } from "./Admin";
 export { CreateTicketPage, TicketsListPage, TicketDetailPage } from "./Tickets";
 
 export { PageNotFound } from "./PageNotFound";

@@ -197,10 +197,10 @@ export const AdminSidebar = ({ isOpen, setIsOpen, onMenuClick }) => {
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 p-4 overflow-hidden">
-          <ul className="space-y-2 h-full">
+        <nav className="flex-1 p-4 flex flex-col min-h-0">
+          <ul className="space-y-2 flex-1 flex flex-col justify-start min-h-0">
             {navItems.map((item) => (
-              <li key={item.path}>
+              <li key={item.path} className="flex-shrink-0">
                 <Link
                   to={item.path}
                   onClick={() => {
@@ -210,7 +210,7 @@ export const AdminSidebar = ({ isOpen, setIsOpen, onMenuClick }) => {
                     }
                   }}
                   className={`
-                    flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                    flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm
                     ${
                       isActive(item.path)
                         ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-medium"
@@ -218,8 +218,8 @@ export const AdminSidebar = ({ isOpen, setIsOpen, onMenuClick }) => {
                     }
                   `}
                 >
-                  <span className={`bi ${item.icon} text-lg`}></span>
-                  <span>{item.label}</span>
+                  <span className={`bi ${item.icon} text-base flex-shrink-0`}></span>
+                  <span className="truncate">{item.label}</span>
                 </Link>
               </li>
             ))}

@@ -18,4 +18,5 @@ export { AdminAnalyticsPage } from "./AdminAnalyticsPage";
 export { AdminHistoryPage } from "./AdminHistoryPage";
 export { AdminTicketsPage } from "./AdminTicketsPage";
 export { AdminReviewsPage } from "./AdminReviewsPage";
+export { AdminSettingsPage } from "./AdminSettingsPage";
 

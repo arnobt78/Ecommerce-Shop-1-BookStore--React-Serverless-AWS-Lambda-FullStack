@@ -204,136 +204,165 @@ const AdminUsersContent = () => {
 
       {/* Users Table */}
       {!isLoading && !error && (
-        <Card className="p-0">
-          {/* Search and Filter Bar */}
-          <SearchFilterBar
-            searchValue={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Search by name or email..."
-            filterValue={filterRole}
-            onFilterChange={setFilterRole}
-            filterOptions={filterRoleOptions}
-          >
-            <ResultsCount
-              filteredCount={filteredUsers.length}
-              totalCount={users?.length || 0}
-              entityName="users"
-            />
-          </SearchFilterBar>
+        <>
+          {/* Admin Role Note */}
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="bi-exclamation-triangle text-amber-600 dark:text-amber-400 text-xl flex-shrink-0 mt-0.5"></span>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                  Admin Role Assignment Notice
+                </h3>
+                <p className="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
+                  Currently, you can change other users' roles from{" "}
+                  <strong>User</strong> to <strong>Admin</strong> via this page.
+                  However, please note that in this project, the admin account
+                  is integrated with{" "}
+                  <strong className="font-mono">admin@example.com</strong> via
+                  environment variables in the code/account configuration.
+                  Therefore, other users assigned the admin role might not have
+                  full privileges to perform all real admin role activities and
+                  may have limited access to certain administrative functions.
+                </p>
+              </div>
+            </div>
+          </div>
 
-          {/* Users Table */}
-          {filteredUsers.length === 0 ? (
-            <EmptyState
-              message={
-                searchQuery || filterRole !== "all"
-                  ? "No users found matching your filters"
-                  : "No users available"
-              }
-            />
-          ) : (
-            <SortableTable
-              data={filteredUsers}
-              columns={tableColumns}
-              defaultSortColumn="name"
-              defaultSortDirection="asc"
-              renderRow={(user, index) => (
-                <tr
-                  key={user.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {user.name || "N/A"}
-                    </div>
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">
-                      {user.email || "N/A"}
-                    </div>
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={user.role || "user"} />
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {formatDateShort(user.createdAt)}
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-2">
-                      {/* View Button - Always enabled */}
-                      <button
-                        onClick={() => navigate(`/admin/users/${user.id}`)}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
-                        aria-label="View user details"
-                      >
-                        <span className="bi-eye"></span>
-                      </button>
-                      {/* Edit Button - Disabled for demo accounts */}
-                      {(() => {
-                        const demoAccount = isDemoAccount(user.email);
-                        return (
-                          <button
-                            onClick={() =>
-                              navigate(`/admin/users/${user.id}/edit`)
-                            }
-                            disabled={demoAccount}
-                            className={`${
-                              demoAccount
-                                ? "text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50"
-                                : "text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
-                            }`}
-                            aria-label={
-                              demoAccount
-                                ? "Demo accounts cannot be edited"
-                                : "Edit user"
-                            }
-                            title={
-                              demoAccount
-                                ? "Demo accounts cannot be edited"
-                                : "Edit user"
-                            }
-                          >
-                            <span className="bi-pencil"></span>
-                          </button>
-                        );
-                      })()}
-                      {/* Delete Button - Disabled for demo accounts */}
-                      {(() => {
-                        const demoAccount = isDemoAccount(user.email);
-                        return (
-                          <button
-                            onClick={() =>
-                              handleDeleteClick(user.id, user.name, user.email)
-                            }
-                            disabled={
-                              deleteUserMutation.isPending || demoAccount
-                            }
-                            className={`${
-                              demoAccount
-                                ? "text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50"
-                                : "text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
-                            }`}
-                            aria-label={
-                              demoAccount
-                                ? "Demo accounts cannot be deleted"
-                                : "Delete user"
-                            }
-                            title={
-                              demoAccount
-                                ? "Demo accounts cannot be deleted"
-                                : "Delete user"
-                            }
-                          >
-                            <span className="bi-trash"></span>
-                          </button>
-                        );
-                      })()}
-                    </div>
-                  </td>
-                </tr>
-              )}
-            />
-          )}
-        </Card>
+          <Card className="p-0">
+            {/* Search and Filter Bar */}
+            <SearchFilterBar
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="Search by name or email..."
+              filterValue={filterRole}
+              onFilterChange={setFilterRole}
+              filterOptions={filterRoleOptions}
+            >
+              <ResultsCount
+                filteredCount={filteredUsers.length}
+                totalCount={users?.length || 0}
+                entityName="users"
+              />
+            </SearchFilterBar>
+
+            {/* Users Table */}
+            {filteredUsers.length === 0 ? (
+              <EmptyState
+                message={
+                  searchQuery || filterRole !== "all"
+                    ? "No users found matching your filters"
+                    : "No users available"
+                }
+              />
+            ) : (
+              <SortableTable
+                data={filteredUsers}
+                columns={tableColumns}
+                defaultSortColumn="name"
+                defaultSortDirection="asc"
+                renderRow={(user, index) => (
+                  <tr
+                    key={user.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {user.name || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {user.email || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <StatusBadge status={user.role || "user"} />
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {formatDateShort(user.createdAt)}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        {/* View Button - Always enabled */}
+                        <button
+                          onClick={() => navigate(`/admin/users/${user.id}`)}
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
+                          aria-label="View user details"
+                        >
+                          <span className="bi-eye"></span>
+                        </button>
+                        {/* Edit Button - Disabled for demo accounts */}
+                        {(() => {
+                          const demoAccount = isDemoAccount(user.email);
+                          return (
+                            <button
+                              onClick={() =>
+                                navigate(`/admin/users/${user.id}/edit`)
+                              }
+                              disabled={demoAccount}
+                              className={`${
+                                demoAccount
+                                  ? "text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50"
+                                  : "text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
+                              }`}
+                              aria-label={
+                                demoAccount
+                                  ? "Demo accounts cannot be edited"
+                                  : "Edit user"
+                              }
+                              title={
+                                demoAccount
+                                  ? "Demo accounts cannot be edited"
+                                  : "Edit user"
+                              }
+                            >
+                              <span className="bi-pencil"></span>
+                            </button>
+                          );
+                        })()}
+                        {/* Delete Button - Disabled for demo accounts */}
+                        {(() => {
+                          const demoAccount = isDemoAccount(user.email);
+                          return (
+                            <button
+                              onClick={() =>
+                                handleDeleteClick(
+                                  user.id,
+                                  user.name,
+                                  user.email
+                                )
+                              }
+                              disabled={
+                                deleteUserMutation.isPending || demoAccount
+                              }
+                              className={`${
+                                demoAccount
+                                  ? "text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50"
+                                  : "text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                              }`}
+                              aria-label={
+                                demoAccount
+                                  ? "Demo accounts cannot be deleted"
+                                  : "Delete user"
+                              }
+                              title={
+                                demoAccount
+                                  ? "Demo accounts cannot be deleted"
+                                  : "Delete user"
+                              }
+                            >
+                              <span className="bi-trash"></span>
+                            </button>
+                          );
+                        })()}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              />
+            )}
+          </Card>
+        </>
       )}
 
       {/* Delete Confirmation Dialog */}
